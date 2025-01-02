@@ -1,0 +1,127 @@
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME    	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+mychart2	default  	1       	2025-01-02 16:01:43.584609795 +0530 IST	deployed	mychart2-0.4.0	4.0.0      
+nginx   	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1  	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm get values mychart2
+USER-SUPPLIED VALUES:
+null
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+*************************Check values ************************************
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install mychart2 stacksimplify/mychart2 --dry-run | grep -i nodePort
+  type: NodePort
+      nodePort: 31232
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install mychart2 stacksimplify/mychart2 --dry-run --set service.nodePort=31240 | grep -i nodePort
+  type: NodePort
+      nodePort: 31240
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install mychart2 stacksimplify/mychart2 --set service.nodePort=31240
+NAME: mychart2
+LAST DEPLOYED: Thu Jan  2 16:10:23 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm status mychart2 --show-resources
+NAME: mychart2
+LAST DEPLOYED: Thu Jan  2 16:10:23 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Pod(related)
+NAME                       READY   STATUS    RESTARTS   AGE
+mychart2-db7c6d8cc-sfq9g   1/1     Running   0          17s
+
+==> v1/Service
+NAME       TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+mychart2   NodePort   10.96.48.207   <none>        80:31240/TCP   18s
+
+==> v1/Deployment
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+mychart2   1/1     1            1           17s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+*************************We can user -f values.yaml or --values to change the default values **********************
+
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME    	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+mychart2	default  	1       	2025-01-02 16:16:02.128860557 +0530 IST	deployed	mychart2-0.4.0	4.0.0      
+nginx   	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1  	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm status mychart2 --show-resources | grep -i nodeport
+mychart2   NodePort   10.96.117.199   <none>        80:31232/TCP   105s
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm upgrade mychart2 stacksimplify/mychart2  --set service.nodePort=31240
+Release "mychart2" has been upgraded. Happy Helming!
+NAME: mychart2
+LAST DEPLOYED: Thu Jan  2 16:18:06 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm status mychart2 --show-resources | grep -i nodeport
+mychart2   NodePort   10.96.117.199   <none>        80:31240/TCP   2m12s
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+
+
+**********************Check the values with Revisions***************************************
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm get values mychart2 --revision 1
+USER-SUPPLIED VALUES:
+null
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm get values mychart2 --revision 2
+USER-SUPPLIED VALUES:
+service:
+  nodePort: 31240
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+
+***************************Fect the Manifest for the release***************************
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm history mychart2
+REVISION	UPDATED                 	STATUS    	CHART         	APP VERSION	DESCRIPTION     
+1       	Thu Jan  2 16:16:02 2025	superseded	mychart2-0.4.0	4.0.0      	Install complete
+2       	Thu Jan  2 16:18:06 2025	deployed  	mychart2-0.4.0	4.0.0      	Upgrade complete
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm get manifest mychart2 --revision 2 | grep -i nodeport
+  type: NodePort
+      nodePort: 31240
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm get manifest mychart2 --revision 1 | grep -i nodeport
+  type: NodePort
+      nodePort: 31232
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+ *****************************Values passwd have some preference*************************
+***************************default Values can be deleted with null*********************
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm upgrade mychart2 stacksimplify/mychart2 --set service.nodePort=Null --dry-run | grep -i nodePort
+  type: NodePort
+      nodePort: 
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm get notes mychart2
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
