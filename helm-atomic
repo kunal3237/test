@@ -1,0 +1,108 @@
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install stacksimplify/mychart2 --generate-name --version 0.2.0
+NAME: mychart2-1735812765
+LAST DEPLOYED: Thu Jan  2 15:42:46 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services mychart2-1735812765)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME               	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+mychart2-1735812765	default  	1       	2025-01-02 15:42:46.441802685 +0530 IST	deployed	mychart2-0.2.0	2.0.0      
+nginx              	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1  	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+    ********************************************************************************
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install qa101 stacksimplify/mychart1 --set service.port=999999
+Error: INSTALLATION FAILED: 2 errors occurred:
+	* Service "qa101-mychart1" is invalid: spec.ports[0].port: Invalid value: 999999: must be between 1 and 65535, inclusive
+	* Deployment.apps "qa101-mychart1" is invalid: spec.template.spec.containers[0].ports[0].containerPort: Invalid value: 999999: must be between 1 and 65535, inclusive
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1  	1.25.3     
+qa101	default  	1       	2025-01-02 15:50:57.465449022 +0530 IST	failed  	mychart1-0.1.0	1.0.0      
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm status qa101 --show-resources
+NAME: qa101
+LAST DEPLOYED: Thu Jan  2 15:50:57 2025
+NAMESPACE: default
+STATUS: failed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services qa101-mychart1)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+
+****************with Atomc option******************************
+  
+  root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install qa101 stacksimplify/mychart1 --set service.port=9999999 --atomic
+Error: INSTALLATION FAILED: release qa101 failed, and has been uninstalled due to atomic being set: 2 errors occurred:
+	* Service "qa101-mychart1" is invalid: spec.ports[0].port: Invalid value: 9999999: must be between 1 and 65535, inclusive
+	* Deployment.apps "qa101-mychart1" is invalid: spec.template.spec.containers[0].ports[0].containerPort: Invalid value: 9999999: must be between 1 and 65535, inclusive
+
+
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+  ***************************On Different Namespace*********************************
+
+    root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install mychart2 stacksimplify --namespace kunal
+Error: INSTALLATION FAILED: non-absolute URLs should be in form of repo_name/path_to_chart, got: stacksimplify
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm install mychart2 stacksimplify/mychart2 --namespace kunal
+NAME: mychart2
+LAST DEPLOYED: Thu Jan  2 15:57:29 2025
+NAMESPACE: kunal
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace kunal -o jsonpath="{.spec.ports[0].nodePort}" services mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace kunal -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list --namespace kunal
+NAME    	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+mychart2	kunal    	1       	2025-01-02 15:57:29.625340012 +0530 IST	deployed	mychart2-0.4.0	4.0.0      
+root@kunal-Lenovo-U410:/home/kunal/oneplus# kubectl get all -n kunal
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/mychart2-db7c6d8cc-mrch9   1/1     Running   0          35s
+
+NAME               TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+service/mychart2   NodePort   10.96.164.38   <none>        80:31232/TCP   35s
+
+NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/mychart2   1/1     1            1           35s
+
+NAME                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/mychart2-db7c6d8cc   1         1         1       35s
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
+
+
+  ************************Namespace Specific****************************
+  root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list --namespace kunal
+NAME    	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+mychart2	kunal    	1       	2025-01-02 15:57:29.625340012 +0530 IST	deployed	mychart2-0.4.0	4.0.0      
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm uninstall mychart2 --namespace kunal
+release "mychart2" uninstalled
+root@kunal-Lenovo-U410:/home/kunal/oneplus# helm list --namespace kunal
+NAME	NAMESPACE	REVISION	UPDATED	STATUS	CHART	APP VERSION
+root@kunal-Lenovo-U410:/home/kunal/oneplus# kubectl get all -n kunal
+No resources found in kunal namespace.
+root@kunal-Lenovo-U410:/home/kunal/oneplus# 
