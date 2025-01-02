@@ -1,0 +1,118 @@
+To start working with helm, First add the Helm repo to worth with:
+*************************************************************************
+root@kunal-Lenovo-U410:/home/kunal# helm repo list
+NAME         	URL                                        
+stacksimplify	https://stacksimplify.github.io/helm-charts
+root@kunal-Lenovo-U410:/home/kunal# 
+
+Adding Repo**********
+root@kunal-Lenovo-U410:/home/kunal# helm repo add bitnami https://charts.bitnami.com/bitnami   
+"bitnami" has been added to your repositories
+root@kunal-Lenovo-U410:/home/kunal# helm repo list
+NAME         	URL                                        
+stacksimplify	https://stacksimplify.github.io/helm-charts
+bitnami      	https://charts.bitnami.com/bitnami         
+root@kunal-Lenovo-U410:/home/kunal# 
+
+Searching helm for mysql*******
+root@kunal-Lenovo-U410:/home/kunal# helm search repo mysql
+NAME                  	CHART VERSION	APP VERSION	DESCRIPTION                                       
+bitnami/mysql         	12.2.0       	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/phpmyadmin    	18.1.0       	5.2.1      	phpMyAdmin is a free software tool written in P...
+bitnami/mariadb       	20.2.1       	11.4.4     	MariaDB is an open source, community-developed ...
+bitnami/mariadb-galera	14.1.0       	11.4.4     	MariaDB Galera is a multi-primary database clus...
+
+Checking the version of a particular helm chart*******
+root@kunal-Lenovo-U410:/home/kunal# helm search repo bitnami/mysql --versions | head
+NAME         	CHART VERSION	APP VERSION	DESCRIPTION                                       
+bitnami/mysql	12.2.0       	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	12.1.0       	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	12.0.1       	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	12.0.0       	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	11.1.20      	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	11.1.19      	8.4.3      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	11.1.18      	8.4.2      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	11.1.17      	8.4.2      	MySQL is a fast, reliable, scalable, and easy t...
+bitnami/mysql	11.1.16      	8.4.2      	MySQL is a fast, reliable, scalable, and easy t...
+
+root@kunal-Lenovo-U410:/home/kunal# helm search repo mychart2 --versions
+NAME                  	CHART VERSION	APP VERSION	DESCRIPTION                
+stacksimplify/mychart2	0.4.0        	4.0.0      	A Helm chart for Kubernetes
+stacksimplify/mychart2	0.3.0        	3.0.0      	A Helm chart for Kubernetes
+stacksimplify/mychart2	0.2.0        	2.0.0      	A Helm chart for Kubernetes
+stacksimplify/mychart2	0.1.0        	1.0.0      	A Helm chart for Kubernetes
+root@kunal-Lenovo-U410:/home/kunal# 
+
+Installing Helm chart*********************
+root@kunal-Lenovo-U410:/home/kunal# helm install myapp2 stacksimplify/mychart2 --version "0.1.0"
+NAME: myapp2
+LAST DEPLOYED: Thu Jan  2 14:24:13 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp2-mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal# helm list
+NAME  	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+myapp2	default  	1       	2025-01-02 14:24:13.794562529 +0530 IST	deployed	mychart2-0.1.0	1.0.0      
+nginx 	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1  	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal# 
+
+root@kunal-Lenovo-U410:/home/kunal# helm status myapp2 --show-resources
+NAME: myapp2
+LAST DEPLOYED: Thu Jan  2 14:24:13 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+myapp2-mychart2   1/1     1            1           65s
+
+==> v1/Pod(related)
+NAME                               READY   STATUS    RESTARTS   AGE
+myapp2-mychart2-5786d6fb97-5xrdn   1/1     Running   0          60s
+
+==> v1/Service
+NAME              TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+myapp2-mychart2   NodePort   10.96.89.108   <none>        80:31232/TCP   66s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp2-mychart2)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal# 
+
+Kubernetes server Details*********
+root@kunal-Lenovo-U410:/home/kunal# kubectl get nodes
+NAME                 STATUS   ROLES           AGE   VERSION
+kind-control-plane   Ready    control-plane   17d   v1.28.0
+kind-worker          Ready    <none>          17d   v1.28.0
+kind-worker2         Ready    <none>          17d   v1.28.0
+kind-worker3         Ready    <none>          17d   v1.28.0
+root@kunal-Lenovo-U410:/home/kunal# kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+myapp2-mychart2   1/1     1            1           3m30s
+nginx             1/1     1            1           17d
+root@kunal-Lenovo-U410:/home/kunal# kubectl get svc
+NAME              TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes        ClusterIP      10.96.0.1       <none>        443/TCP        17d
+myapp2-mychart2   NodePort       10.96.89.108    <none>        80:31232/TCP   3m45s
+nginx             LoadBalancer   10.96.188.131   <pending>     80:31667/TCP   17d
+
+root@kunal-Lenovo-U410:/home/kunal# kubectl get pods
+NAME                               READY   STATUS    RESTARTS        AGE
+myapp2-mychart2-5786d6fb97-5xrdn   1/1     Running   0               4m31s
+nginx-fc995b8c8-8q7dd              1/1     Running   16 (4h8m ago)   17d
+root@kunal-Lenovo-U410:/home/kunal# 
+
+
+
+
+
+
