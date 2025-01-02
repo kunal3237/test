@@ -1,0 +1,167 @@
+{{}}  -- Are template actions in Helm. In one of our example we have used {{.}} in NOTES.txt file to see that in action.
+However we can use template action in many places {{}}, Anything between {{}} is template element.
+We will explore other template actions here:
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Release.Name}}-{{.Chart.Name}}        # Added template action that would be rendered by template emgine
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 10 deployment
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-myapp1                          # Name rendered by Template Engine
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+
+
+***************************Template Functions e.g functionName arg1 arg2*****************************
+name: {{ quote .Release.Name }}-something-{{ quote .Chart.Name }}            # is not a valid one,
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-something-{{ quote .Chart.Name }}                # Function quote used
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 10 deployment
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-something-"myapp1"                                        # Function and template action rendered
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+
+
+*************************Pipeline use *******************************************
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | upper }}-something-{{ quote .Chart.Name }}                      #Pipe used , Output of release name is sent to upper function via pipe
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 10 deployment 
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: MYAPP-something-"myapp1"                                                      #Pipe and Template action rendered
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+
+********************using Default function**************************************
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ default "kunal" .Sharma | upper }}-something-{{ quote .Chart.Name }}                  #default function has Kunal value if .Sharma is evaluated to null
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 10 deployment
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: KUNAL-something-"myapp1"                                                        # As there is no .Sharma object, Default function used the "Kunal" as the default value
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
