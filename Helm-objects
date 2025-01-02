@@ -1,0 +1,106 @@
+-Lenovo-U410:/home/kunal/Helm-Study# helm create myapp1
+Creating myapp1
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# tree
+.
+└── myapp1
+    ├── charts            -----SubCharts Directory
+    ├── Chart.yaml        ----- Information about Chart/dependencies 
+    ├── templates         ----- Contains template files 
+    │   ├── deployment.yaml
+    │   ├── _helpers.tpl
+    │   ├── hpa.yaml
+    │   ├── ingress.yaml
+    │   ├── NOTES.txt      ----- Notes
+    │   ├── serviceaccount.yaml
+    │   ├── service.yaml
+    │   └── tests          ----- Test Pod
+    │       └── test-connection.yaml
+    └── values.yaml       ----- Values of the charts 
+
+4 directories, 10 files
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# 
+
+In Helm, there are builtin objects. Which are used in temaplate files and are rendered by template engine to evaluate to some values.
+In helm we have some builtin objects. root "." is the topmost objects.
+Below is the list of the buitlin objects
+1) "." 
+2) Release        
+3) Chart
+4) Values
+5) Subcharts
+6) Capabilties      ---Kubernetes info
+7) Template
+8) Files
+
+* All start with Capital letters. All are refereneced from root object. eg. ".Release" or ".Chart" or ".Values"
+
+In NOTES.txt file, Just added the root object to see all the builtin objects
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/NOTES.txt 
+{{/*  Explanation about objects in Helm */}}
+{{.}}
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 30 NOTES | grep -v "files"
+NOTES:
+map[Capabilities:0xc000a84000 Chart:{{myapp1  [] 0.1.0 A Helm chart for Kubernetes [] []  v2   1.16.0 false map[]  [] application} true} 
+Files:map[.helmignore:[35 32 80 97 116 116 101 114 110 115 32 116 111 32 105 103 110 111 114 101 32 119 104 101 110 32 98 117 105 108 100 105 110 103 32 112 97 99 107 97 103 
+101 115 46 10 35 32 84 104 105 115 32 115 117 112 112 111 114 116 115 32 115 104 101 108 108 32 103 108 111 98 32 109 97 116 99 104 105 110 103 44 32 114 101 108 97 116 105 
+118 101 32 112 97 116 104 32 109 97 116 99 104 105 110 103 44 32 97 110 100 10 35 32 110 101 103 97 116 105 111 110 32 40 112 114 101 102 105 120 101 100 32 119 105 116 104 32 33 41 
+46 32 79 110 108 121 32 111 110 101 32 112 97 116 116 101 114 110 32 112 101 114 32 108 105 110 101 46 10 46 68 83 95 83 116 111 114 101 10 35 32 67 111 109 109 111 110 32 86 67 83 32 1
+00 105 114 115 10 46 103 105 116 47 10 46 103 105 116 105 103 110 111 114 101 10 46 98 122 114 47 10 46 98 122 114 105 103 110 111 114 101 10 46 104 103 47 10 46 104 103 105 103 110 
+111 114 101 10 46 115 118 110 47 10 35 32 67 111 109 109 111 110 32 98 97 99 107 117 112 32 102 105 108 101 115 10 42 46 115 119 112 10 42 46 98 97 107 10 42 46 116 109 112 10 42 46 111
+114 105 103 10 42 126 10 35 32 86 97 114 105 111 117 115 32 73 68 69 115 10 46 112 114 111 106 101 99 116 10 46 105 100 101 97 47 10 42 46 116 109 112 114 111 106 10 46 118 115 99 
+111 
+100 101 47 10]] Release:map[IsInstall:true IsUpgrade:false Name:myapp Namespace:default Revision:1 Service:Helm] Subcharts:map[] Template:map[BasePath:myapp1/templates
+Name:myapp1/templates/NOTES.txt] Values:map[affinity:map[] autoscaling:map[enabled:false maxReplicas:100 minReplicas:1 targetCPUUtilizationPercentage:80] fullnameOverride: image:map[pullPolicy:IfNotPresent repository:nginx tag:] 
+imagePullSecrets:[] ingress:map[annotations:map[] className: enabled:false hosts:[map[host:chart-example.local paths:[map[path:/ pathType:ImplementationSpecific]]]] tls:[]] nameOverride: nodeSelector:map[] 
+podAnnotations:map[] podSecurityContext:map[] replicaCount:1 resources:map[] securityContext:map[] service:map[port:80 type:ClusterIP] serviceAccount:map[annotations:map[] create:true name:] tolerations:[]]]
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+*****************Now changing it to Other Object*******************
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/NOTES.txt 
+{{/*  Explanation about objects in Helm */}}
+
+Release: {{.Release}}
+
+Chart: {{.Chart}}
+
+Values: {{.Values}}
+
+Template: {{.Template}}
+
+Subcharts: {{.Subcharts}}
+
+Files : {{.Files}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 30 NOTES | grep -v "files"
+NOTES:
+Release: map[IsInstall:true IsUpgrade:false Name:myapp Namespace:default Revision:1 Service:Helm]
+
+Chart: {{myapp1  [] 0.1.0 A Helm chart for Kubernetes [] []  v2   1.16.0 false map[]  [] application} true}
+
+Values: map[affinity:map[] autoscaling:map[enabled:false maxReplicas:100 minReplicas:1 targetCPUUtilizationPercentage:80] fullnameOverride: image:map[pullPolicy:IfNotPresent repository:nginx tag:] imagePullSecrets:[] ingress:map[annotations:map[] className: enabled:false hosts:[map[host:chart-example.local paths:[map[path:/ pathType:ImplementationSpecific]]]] tls:[]] nameOverride: nodeSelector:map[] podAnnotations:map[] podSecurityContext:map[] replicaCount:1 resources:map[] securityContext:map[] service:map[port:80 type:ClusterIP] serviceAccount:map[annotations:map[] create:true name:] tolerations:[]]
+
+Template: map[BasePath:myapp1/templates Name:myapp1/templates/NOTES.txt]
+
+Subcharts: map[]
+
+Files : map[.helmignore:[35 32 80 97 116 116 101 114 110 115 32 116 111 32 105 103 110 111 114 101 32 119 104 101 110 32 98 117 105 108 100 105 110 103 32 112 97 99 107 97 103 101 115 46 10 35 32 84 104 105 115 32 115 117 112 112 111 114 116 115 32 115 104 101 108 108 32 103 108 111 98 32 109 97 116 99 104 105 110 103 44 32 114 101 108 97 116 105 118 101 32 112 97 116 104 32 109 97 116 99 104 105 110 103 44 32 97 110 100 10 35 32 110 101 103 97 116 105 111 110 32 40 112 114 101 102 105 120 101 100 32 119 105 116 104 32 33 41 46 32 79 110 108 121 32 111 110 101 32 112 97 116 116 101 114 110 32 112 101 114 32 108 105 110 101 46 10 46 68 83 95 83 116 111 114 101 10 35 32 67 111 109 109 111 110 32 86 67 83 32 100 105 114 115 10 46 103 105 116 47 10 46 103 105 116 105 103 110 111 114 101 10 46 98 122 114 47 10 46 98 122 114 105 103 110 111 114 101 10 46 104 103 47 10 46 104 103 105 103 110 111 114 101 10 46 115 118 110 47 10 35 32 67 111 109 109 111 110 32 98 97 99 107 117 112 32 102 105 108 101 115 10 42 46 115 119 112 10 42 46 98 97 107 10 42 46 116 109 112 10 42 46 111 114 105 103 10 42 126 10 35 32 86 97 114 105 111 117 115 32 73 68 69 115 10 46 112 114 111 106 101 99 116 10 46 105 100 101 97 47 10 42 46 116 109 112 114 111 106 10 46 118 115 99 111 100 101 47 10]]
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+
+*********************To get further details from obejects*****************************
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/NOTES.txt 
+{{/*  Explanation about objects in Helm */}}
+
+ReleaseName: {{.Release.Name}}
+ReleaseNamespace: {{.Release.Namespace}}
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 30 NOTES
+NOTES:
+ReleaseName: myapp
+ReleaseNamespace: default
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+
+
