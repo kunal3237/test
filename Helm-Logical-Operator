@@ -1,0 +1,446 @@
+#########################################Boolean and AND operator######################################
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  {{ if  .Values.env  }}                                              #check if env parameter exist in values.yaml file if exists then replica 3
+  replicas: 3
+  {{ else if not .Values.env  }}                                      # If does not exist then replicas 2
+  replicas: 2
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail values.yaml 
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+#env: prod                                                               #env does not exists, so it should set replicas to 2
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . |  grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 2                                                            #evaluated to 2
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+
+####################################Now setting env parameter###################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail values.yaml 
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod                                                         #env is set to prod here
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . |  grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 3                                                    #Evaluated to 3 now
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+
+###################################Logical Operator AND, OR , NOT ( AND arg1 arg2 )#####################################
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail values.yaml 
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod                                                                 #env and team parameter exist in values.yaml file
+team: true
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  {{ if and .Values.env  .Values.team }}                                  #AND operator to check if both values exist
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 3                                                          #As both parameters exist so it and is evaluated to true and replicas is set to 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod 
+#team: true                                                              #Now team is commented
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 1                                                          #replicas is evaluated to 1
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+
+
+#####################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail values.yaml 
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod 
+team: "no"
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  {{ if and .Values.env ( eq .Values.team "no" ) }}                              #Both values exist and team is set to no
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 3                                                                #Evaluating to replicas to 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod 
+team: "yes"                                                            #Now changed team value to yes
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 1                                                                      # Replicas is evaluated to 1
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+
+#################################################OR##################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  {{ if or .Values.env ( eq .Values.team "no" ) }}                                  #Using OR and team value is set to yes values.yaml file
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod 
+team: "yes"                                                                        #team is set to "yes"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 10 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 3                                                                #OR operator evaluated the condition and replicas is set to 3 now
+
+
+########################################NOT operator########################################
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+#env: prod                                                       #Commented the env parameter.
+team: "yes"
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  {{ if not .Values.env  }}                                        #Not operator
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 3                                                  #As env does not exist in the values.yaml it is evaluated to 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
