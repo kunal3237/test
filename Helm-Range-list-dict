@@ -1,0 +1,220 @@
+In helm we use range for looping. It is same like loop (for) in programming language
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+testing:
+ env: prod 
+ team: "yes"
+
+firstname: kunal
+namespaces:                                                                      #In values.yaml file, list is defined
+  - name: myapp1
+  - name: myapp2
+  - name: myapp3
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/namespace.yaml 
+# Range with List
+{{- range .Values.namespaces }}                                              #Range is used here, it will create 3 namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .name }}
+---  
+{{- end }}      
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 namespace.yaml
+# Source: myapp1/templates/namespace.yaml
+# Range with List
+apiVersion: v1                                                                      
+kind: Namespace
+metadata:
+  name: myapp1
+---
+# Source: myapp1/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp2
+---
+# Source: myapp1/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp3
+---
+
+#########################################Three namespaces created ######################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 .
+NAME: myapp1
+LAST DEPLOYED: Thu Jan  9 17:23:07 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=myapp1,app.kubernetes.io/instance=myapp1" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm list
+NAME  	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+myapp1	default  	1       	2025-01-09 17:23:07.7378635 +0530 IST 	deployed	myapp1-0.1.0	1.16.0     
+nginx 	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# kubectl get ns
+NAME                 STATUS   AGE
+default              Active   25d
+kube-node-lease      Active   25d
+kube-public          Active   25d
+kube-system          Active   25d
+kunal                Active   24d
+local-path-storage   Active   25d
+myapp1               Active   12s
+myapp2               Active   12s
+myapp3               Active   12s
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+##########################################Rang with Variables ######################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/namespace.yaml 
+# Range with variables
+{{- range $varname := .Values.namespaces }}                                                            #variable will take values from range
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $varname.name }}
+---  
+{{- end }}      
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 namespace.yaml
+# Source: myapp1/templates/namespace.yaml
+# Range with variables
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp1
+---
+# Source: myapp1/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp2
+---
+# Source: myapp1/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp3
+---
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 .
+NAME: myapp1
+LAST DEPLOYED: Thu Jan  9 17:27:28 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=myapp1,app.kubernetes.io/instance=myapp1" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm status myapp1 --show-resources
+NAME: myapp1
+LAST DEPLOYED: Thu Jan  9 17:27:28 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Namespace
+NAME     STATUS   AGE                                                                                      #Three namespaces created
+myapp1   Active   21s
+myapp2   Active   21s
+myapp3   Active   21s
+
+==> v1/ServiceAccount
+NAME     SECRETS   AGE
+myapp1   0         21s
+
+==> v1/Service
+NAME     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+myapp1   ClusterIP   10.96.125.200   <none>        80/TCP    21s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=myapp1,app.kubernetes.io/instance=myapp1" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+
+########################################Rabge with dict #################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail -n 11 values.yaml 
+myapps:
+  config1: 
+    appName: myapp1
+    appType: webserver
+    appTech: HTML
+    appDb: mysql
+  config2: 
+    appName: myapp2
+    appType: webserver
+    appTech: HTML
+    appDb: mysql
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/configmap.yaml 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap1
+data: 
+{{- range $key, $value := .Values.myapps.config1 }}                                                      #range with dictionary
+{{- $key | nindent 2}}: {{ $value }}
+{{- end}}  
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA10 configmap.yaml
+# Source: myapp1/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myapp1-myapp1-configmap1
+data:                                                                                                  
+  appDb: mysql
+  appName: myapp1
+  appTech: HTML
+  appType: webserver
+---
+############################################# Root object in range Dictionary ################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/configmap.yaml
+{{ $varname := .Release.Name }}                                          #use of root object in the range with dict
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap1
+data: 
+{{- range $key, $value := .Values.myapps.config1 }}
+{{- $key | nindent 2}}: {{ $value }}-{{$varname}}
+{{- end}}  
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA10 configmap.yaml
+# Source: myapp1/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myapp1-myapp1-configmap1
+data:
+  appDb: mysql-myapp1                                                              #value is evaluated to myapp1
+  appName: myapp1-myapp1
+  appTech: HTML-myapp1
+  appType: webserver-myapp1
+---
