@@ -1,0 +1,189 @@
+In Helm we can use if-else to set contitions. Multiple operators are available to work with conditions. eq,ne,lt,gt etc
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail values.yaml 
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: dev                                                                               #setting parameter env to dev
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  {{ if eq .Values.env "prod" }}                                                        #Added if else if end as the value is dev, Ot shoud set 2 replicas
+  replicas: 3
+  {{ else if eq .Values.env "dev" }}
+  replicas: 2
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp . --dry-run | grep -iA 30 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 2                                                                                      #Value evaluated to 2
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  
+                    null
+
+NOTES:
+
+###########################chaning env to prod, Now it should set replicas to 3 ##############################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail values.yaml 
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: prod 
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 .
+NAME: myapp1
+LAST DEPLOYED: Thu Jan  9 13:43:54 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=myapp1,app.kubernetes.io/instance=myapp1" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm list
+NAME  	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+myapp1	default  	1       	2025-01-09 13:43:54.851276 +0530 IST  	deployed	myapp1-0.1.0	1.16.0     
+nginx 	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm status myapp1 --show-resources
+NAME: myapp1
+LAST DEPLOYED: Thu Jan  9 13:43:54 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/ServiceAccount
+NAME     SECRETS   AGE
+myapp1   0         37s
+
+==> v1/Service
+NAME     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+myapp1   ClusterIP   10.96.163.143   <none>        80/TCP    36s
+
+==> v1/Deployment
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1   0/3     3            0           34s
+
+==> v1/Pod(related)
+NAME                      READY   STATUS              RESTARTS   AGE                                                # 3 replicas created
+myapp1-86dcfdf4c6-5zb7w   0/1     ContainerCreating   0          30s
+myapp1-86dcfdf4c6-g9b9l   0/1     ContainerCreating   0          30s
+myapp1-86dcfdf4c6-x2ngr   0/1     ContainerCreating   0          31s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=myapp1,app.kubernetes.io/instance=myapp1" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+###########################################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . --set env=prod | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . --set env=qa | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: nginx
+spec:
+  
+  replicas: 1
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
