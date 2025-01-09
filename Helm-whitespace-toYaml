@@ -1,0 +1,325 @@
+Controling whitespace. Whitespaces can be controlled using "-"
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:         {{ default                 "kunal" .Sharma | upper }}-something-{{ quote .Chart.Name }}                                            #Kunal will start from the place where {{ starts
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+
+oot@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp2 . --dry-run | grep -iA20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:         KUNAL-something-"myapp1"                                                                      #Kunal Started from same place where we started {{
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+
+
+*************************Putting quotes around******************************************
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "                     {{    .Chart.Name }}"                                                              $Added Quotes
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 . --dry-run | grep -iA20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "                     myapp1"                                                          #Redendering happended and its value evaluated from same  indent of {{
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+
+##########################################Added "-" to remove space ####################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "                     {{-    .Chart.Name }}"                                                                # "-" to remove whitepaces
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 . --dry-run | grep -iA20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "myapp1"                                                                                            #value started from the quote
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+#################################Added indent ###################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "                     {{-    .Chart.Name | indent 10 }}"                                                      #Added indent of 10
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 . --dry-run | grep -iA20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "          myapp1"                                                                                        #value started after 10 
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "                     {{-    .Chart.Name | nindent 10 }}"                                                #Adding new line with indent
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm install myapp1 . --dry-run | grep -iA20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  "
+          myapp1"                                                                                              # New line with indent 10
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+##############################toYaml##################################################
+ In deployment , Limit is map which accpet yam data. See below for more details:
+  resources	<ResourceRequirements>
+    claims	<[]ResourceClaim>
+      name	<string> -required-
+    limits	<map[string]Quantity>                                                  #Accept Map 
+    requests	<map[string]Quantity>
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# tail  values.yaml 
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+testing:                                                                                      #Data to be used in limits 
+      firstname: 1
+      lastname: 2
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}                                #toYaml and values will be rendered here
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits:                                                                            #toYaml data is rendered and data is shown in the putput   
+                  
+                    firstname: 1
+                    lastname: 2
+
+NOTES:
+1. Get the application URL by running these commands:
