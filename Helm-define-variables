@@ -1,0 +1,129 @@
+To define variables in the helm, below is the syntax
+
+{{ $varname := somevalue }}
+
+When using the variable, use {{ $varname }}
+Define variable in the top of the file.
+
+
+#########################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+{{ $varname := "sharma" }}                                                                                    $Defined variable
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{- with .Values.testing }}
+    app: {{ $varname }}                                                                                      #Using variable
+    name: {{ $.Values.firstname }}
+   {{- end}}
+spec:
+  {{- with .Values.testing }}
+  {{ if eq .team "no"}}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yam
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: sharma                                                                                      #varname is evaluated
+    name: kunal
+spec:
+  
+  replicas: 1
+  
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+{{ $varname := "sharma" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{- with .Values.testing }}
+    app: {{ $varname | upper }}                                                                              #pipelines and functions used
+    name: {{ $.Values.firstname }}
+   {{- end}}
+spec:
+  {{- with .Values.testing }}
+  {{ if eq .team "no"}}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yam
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: SHARMA                                                                                          #upper function also worked
+    name: kunal
+spec:
+  
+  replicas: 1
+  
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
