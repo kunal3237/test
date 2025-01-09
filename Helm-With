@@ -1,0 +1,312 @@
+With- in Helm is used for setting the scope
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+testing:
+ env: prod 
+ team: "yes"
+
+############################Using with to reset the scope ###########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{ with .Values.testing }}                                                                #with will set the scope
+    app: {{ .env }}                                                                          # As we have used with so now the scope/root is equal to  ".Values.testing. So there is not need to mantion it here again          
+   {{end}}
+spec:
+  {{ if not .Values.env  }}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+   
+    app: prod                                                                                        # Above logic is evaluated and value is set to prod, space is added above and below the value evaluated
+   
+spec:
+  
+  replicas: 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+#######################################Removing whitespaces #############################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{- with .Values.testing }}                                                                        # "-" is used
+    app: {{ .env }}
+   {{- end}}
+spec:
+  {{ if not .Values.env  }}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yaml
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: prod                                                          #Space removed
+spec:
+  
+  replicas: 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+
+#######################################As the scope of the root is chaged whne we use the with, But if you we want to use the root object scope, then we need to use $ #####################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+
+tolerations: []
+
+affinity: {}
+
+testing:
+ env: prod 
+ team: "yes"
+
+firstname: kunal                                                  #New parameter is mentioned in the values file
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{- with .Values.testing }}
+    app: {{ .env }}
+    name: {{ .Values.firstname }}                                  #As we want to use firstname here. But the scope is changed here because of with. So it is not able to find the firstname 
+   {{- end}}
+spec:
+  {{ if not .Values.env  }}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yam
+Error: template: myapp1/templates/deployment.yaml:8:20: executing "myapp1/templates/deployment.yaml" at <.Values.firstname>: nil pointer evaluating interface {}.firstname
+
+Use --debug flag to render out invalid YAML
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{- with .Values.testing }}
+    app: {{ .env }}
+    name: {{ $.Values.firstname }}                                                                #To use the root as the scope, We have to use $
+   {{- end}}
+spec:
+  {{ if not .Values.env  }}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm template myapp1 . | grep -iA 20 deployment.yam
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: prod
+    name: kunal                                                                                      #firstname is evaluated here 
+spec:
+  
+  replicas: 3
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+
+
+###################################Scope with If, else If condition#########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# !tail
+tail values.yaml 
+
+tolerations: []
+
+affinity: {}
+
+testing:
+ env: prod 
+ team: "yes"
+
+firstname: kunal
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# cat templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | nindent 15 }}
+  labels:
+   {{- with .Values.testing }}
+    app: {{ .env }}
+    name: {{ $.Values.firstname }}
+   {{- end}}
+spec:
+  {{- with .Values.testing }}                                                                              #with scope and if condition
+  {{ if eq .team "no"}}
+  replicas: 3
+  {{ else }}
+  replicas: 1
+  {{end}}
+  {{end}}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          limits: 
+                  {{ toYaml .Values.testing | nindent 20}}
+
+
+# Source: myapp1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 
+               myapp1
+  labels:
+    app: prod
+    name: kunal
+spec:
+  
+  replicas: 1                                                                                                        #replicas evaluated to 1
+  
+  
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
