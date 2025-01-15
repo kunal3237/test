@@ -1,0 +1,159 @@
+Adding template in the _helpers.tpl file of the chart
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# !ta
+tail templates/_helpers.tpl 
+{{- define "myapp.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "myapp.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+{{- define "helmbasics.labels" }}                                              #defining new template in the file
+app: kunal
+{{- end }}
+
+
+#####################################Calling the template in the deployment.yaml file#########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# !head
+head templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "myapp.fullname" . }}
+  labels:
+  {{ template "helmbasics.labels" }}                                                           #Template being called
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# 
+
+############################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# helm template myapp . | grep -iA 20 deployment.yaml
+# Source: myapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+  
+app: kunal                                                                                       # Template value is present now
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: myapp
+      app.kubernetes.io/instance: myapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: myapp
+        app.kubernetes.io/instance: myapp
+    spec:
+      serviceAccountName: myapp
+
+
+########################## If want to use Built in objects.Please use the root "." objects while calling the template ############################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# !tail
+tail templates/_helpers.tpl 
+{{- define "myapp.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "myapp.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+{{- define "helmbasics.labels" }}
+app: {{ .Chart.Name  }}
+{{- end }}
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# head templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "myapp.fullname" . }}
+  labels:
+  {{ template "helmbasics.labels" .  }}                                                                 # Root object is used here as we are using builtin objects
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# helm template myapp . | grep -iA 20 deployment.yaml
+# Source: myapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+  
+app: myapp                                                                                               # Value is returned if root object not used then it would be empty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: myapp
+      app.kubernetes.io/instance: myapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: myapp
+        app.kubernetes.io/instance: myapp
+    spec:
+      serviceAccountName: myapp
+
+
+###########################If want to use the pipe with template , need to use the include keyword############################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# !tail
+tail templates/_helpers.tpl 
+{{- define "myapp.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "myapp.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+{{- define "helmbasics.labels" }}
+app: {{ .Chart.Name  }}
+{{- end }}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# !head
+head templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "myapp.fullname" . }}
+  labels:
+  {{ include "helmbasics.labels" . | upper }}                                                     # Used include to use the pipes. else it will return to error
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# 
+
+
+# Source: myapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+  
+APP: MYAPP                                                                                     # Template output is converted to upper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: myapp
+      app.kubernetes.io/instance: myapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: myapp
+        app.kubernetes.io/instance: myapp
+    spec:
+      serviceAccountName: myapp
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# 
