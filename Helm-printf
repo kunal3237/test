@@ -1,0 +1,97 @@
+
+
+######################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# tail templates/_helpers.tpl 
+{{- if .Values.serviceAccount.create }}
+{{- default (include "myapp.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+{{- define "helmbasics.labels" }}
+{{ printf "%s-%s" .Release.Name .Chart.Name  | indent 8 }}                                                  #Using Printf 
+{{- end }}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# head templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "myapp.fullname" . }}
+  labels: {{- include "helmbasics.labels" . | upper }}                                                 #Calling the template
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# helm template myapp1 .  | grep -iA 20 deployment.yaml
+# Source: myapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp1
+  labels:
+        MYAPP1-MYAPP                                                                                 #Valte rendered
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: myapp
+      app.kubernetes.io/instance: myapp1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: myapp
+        app.kubernetes.io/instance: myapp1
+    spec:
+      serviceAccountName: myapp1
+      securityContext:
+
+##########################################Caling template in template ##################################
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# tail templates/_helpers.tpl 
+{{- if .Values.serviceAccount.create }}
+{{- default (include "myapp.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+{{- define "helmbasics.labels" }}
+{{ printf "%s-%s" .Release.Name .Chart.Name  | indent 8 }}
+{{- end }}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# head templates/deployment.yaml 
+{{ define "kunal.callingtemplate" }}
+{{ template "helmbasics.labels" . }}                                                    #Template inside template
+{{ end }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "myapp.fullname" . }}
+  labels: {{- include "kunal.callingtemplate" . | upper }} 
+spec:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp# helm template myapp1 .  | grep -iA 20 deployment.yaml
+# Source: myapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp1
+  labels:
+
+        MYAPP1-MYAPP                                                                #Value rendered
+ 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: myapp
+      app.kubernetes.io/instance: myapp1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: myapp
+        app.kubernetes.io/instance: myapp1
+    spec:
