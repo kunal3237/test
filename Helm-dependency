@@ -1,0 +1,351 @@
+#####################################dependency/Subcharts in Helm ###############################################
+Defining Dependencies in Chart.yaml
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart1
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mysql
+  version: "9.9.0"
+  repository: "https://charts.bitnami.com/bitnami"
+
+############################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep list
+NAME    	VERSION	REPOSITORY                                  	STATUS 
+mychart1	0.1.0  	https://stacksimplify.github.io/helm-charts/	missing
+mychart2	0.4.0  	https://stacksimplify.github.io/helm-charts/	missing
+mysql   	9.9.0  	https://charts.bitnami.com/bitnami          	missing
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+#######################################charts folder is empty#################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# tree
+.
+├── charts
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 10 files
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+#############################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "stacksimplify" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+Saving 3 charts
+Downloading mychart1 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mychart2 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mysql from repo https://charts.bitnami.com/bitnami
+Deleting outdated charts
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep list
+NAME    	VERSION	REPOSITORY                                  	STATUS
+mychart1	0.1.0  	https://stacksimplify.github.io/helm-charts/	ok    
+mychart2	0.4.0  	https://stacksimplify.github.io/helm-charts/	ok    
+mysql   	9.9.0  	https://charts.bitnami.com/bitnami          	ok    
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.lock                                             #lock File
+dependencies:
+- name: mychart1
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.1.0
+- name: mychart2
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.4.0
+- name: mysql
+  repository: https://charts.bitnami.com/bitnami
+  version: 9.9.0
+digest: sha256:74a1bdb0ffc619673fac15c6f456d9ec9bd9c0c604d8f41fc7e8df97a53f349b
+generated: "2025-01-15T16:14:00.427892438+05:30"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+######################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.lock 
+dependencies:
+- name: mychart1
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.1.0
+- name: mychart2
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.4.0
+- name: mysql
+  repository: https://charts.bitnami.com/bitnami
+  version: "">= 9.10.8"
+digest: sha256:74a1bdb0ffc619673fac15c6f456d9ec9bd9c0c604d8f41fc7e8df97a53f349b
+generated: "2025-01-15T16:14:00.427892438+05:30"
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "stacksimplify" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+Saving 3 charts
+Downloading mychart1 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mychart2 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mysql from repo https://charts.bitnami.com/bitnami
+Deleting outdated charts
+
+#############################################We can define the version constraints using basic comparison operators###########################
+dep build will try to build or download or update whatever version preset in Chart.lock file
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.lock 
+dependencies:
+- name: mychart1
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.1.0
+- name: mychart2
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.4.0
+- name: mysql
+  repository: https://charts.bitnami.com/bitnami
+  version: 9.21.2                                                                                                #Version in Chart.lock
+digest: sha256:e036c106f013e0ceec4d47b87b4fea61015fc1a54c611aa8696aaa8274b30321
+generated: "2025-01-15T16:53:07.874640743+05:30"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart1
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mysql
+  version: "9.10.10"                                                                                          #Version in Chart.yaml
+  repository: "https://charts.bitnami.com/bitnami"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "stacksimplify" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+Saving 3 charts
+Downloading mychart1 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mychart2 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mysql from repo https://charts.bitnami.com/bitnami
+Deleting outdated charts
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# tree
+.
+├── Chart.lock
+├── charts
+│   ├── mychart1-0.1.0.tgz
+│   ├── mychart2-0.4.0.tgz
+│   └── mysql-9.10.10.tgz
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 14 files
+
+
+########################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# tree
+.
+├── Chart.lock
+├── charts
+│   ├── mychart1-0.1.0.tgz
+│   ├── mychart2-0.4.0.tgz
+│   └── mysql-9.10.10.tgz
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 14 files
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# rm charts/my
+mychart1-0.1.0.tgz  mychart2-0.4.0.tgz  mysql-9.10.10.tgz   
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# rm charts/my                              
+mychart1-0.1.0.tgz  mychart2-0.4.0.tgz  mysql-9.10.10.tgz   
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# rm charts/mysql-9.10.10.tgz                                                           #removing
+
+
+#####################################################################################
+
+Helm dep update
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart1
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mysql
+  version: "~9.19.0"                                                                                              #######################################
+  repository: "https://charts.bitnami.com/bitnami"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.lock 
+dependencies:
+- name: mychart1
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.1.0
+- name: mychart2
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.4.0
+- name: mysql
+  repository: https://charts.bitnami.com/bitnami
+  version: "9.19.0"                                                                                              ####################################################
+digest: sha256:9c3f2a7245ff55be66b567887590d8b7c87ae17a1ce3d914d82ee5ad8c27428e
+generated: "2025-01-15T17:07:45.666509351+05:30"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# tree
+.
+├── Chart.lock
+├── charts
+│   ├── mychart1-0.1.0.tgz
+│   └── mychart2-0.4.0.tgz                                                                                      ###############No Chart for mysql
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 13 files
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# tree
+.
+├── Chart.lock
+├── charts
+│   ├── mychart1-0.1.0.tgz
+│   ├── mychart2-0.4.0.tgz
+│   └── mysql-9.19.1.tgz                                                                #Helm dep update negotiate with version constraints defined in Chart.yaml
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 14 files
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.lock 
+dependencies:
+- name: mychart1
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.1.0
+- name: mychart2
+  repository: https://stacksimplify.github.io/helm-charts/
+  version: 0.4.0
+- name: mysql
+  repository: https://charts.bitnami.com/bitnami
+  version: "~9.19.0"                                                                                                               #######################################################
+digest: sha256:9c3f2a7245ff55be66b567887590d8b7c87ae17a1ce3d914d82ee5ad8c27428e
+generated: "2025-01-15T17:07:45.666509351+05:30"
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart1
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+- name: mysql
+  version: "~9.19.0"                                                                                                              ##############################################
+  repository: "https://charts.bitnami.com/bitnami"
+
+
+###################################helm dep build ,dep build will try to build or download or update whatever version preset in Chart.lock file######################################
+Please make sure the version is same in Chart.yaml and Chart.lock file, else you will out fo sync issue
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep build
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "stacksimplify" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+Saving 3 charts
+Downloading mychart1 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mychart2 from repo https://stacksimplify.github.io/helm-charts/
+Downloading mysql from repo https://charts.bitnami.com/bitnami
+Deleting outdated charts
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# tree
+.
+├── Chart.lock
+├── charts
+│   ├── mychart1-0.1.0.tgz
+│   ├── mychart2-0.4.0.tgz
+│   └── mysql-9.19.0.tgz
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 14 files
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+
