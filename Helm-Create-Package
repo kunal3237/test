@@ -1,0 +1,151 @@
+###########################################Helm Create ##############################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm create myapp1
+Creating myapp1
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# ls -ltr
+total 8
+drwxr-xr-x 4 root root 4096 Jan 15 13:58 myapp
+drwxr-xr-x 4 root root 4096 Jan 15 15:15 myapp1
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# tree myapp1
+myapp1
+├── charts
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+3 directories, 10 files
+
+
+
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myapp1# helm status myapp1 --show-resources
+NAME: myapp1
+LAST DEPLOYED: Wed Jan 15 15:21:18 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/ServiceAccount
+NAME     SECRETS   AGE
+myapp1   0         14s
+
+==> v1/Service
+NAME     TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+myapp1   NodePort   10.96.232.255   <none>        80:31231/TCP   14s
+
+==> v1/Deployment
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1   0/1     1            0           13s
+
+==> v1/Pod(related)
+NAME                      READY   STATUS              RESTARTS   AGE
+myapp1-5747c79bbf-xc95h   0/1     ContainerCreating   0          10s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp1)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+###################################################Creating package ###############################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm package myapp1
+Successfully packaged chart and saved it to: /home/kunal/Helm-Study/myapp1-0.1.0.tgz
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# ls -ltr
+total 12
+drwxr-xr-x 4 root root 4096 Jan 15 13:58 myapp
+drwxr-xr-x 4 root root 4096 Jan 15 15:20 myapp1
+-rw-r--r-- 1 root root 3793 Jan 15 15:22 myapp1-0.1.0.tgz                                      #Package
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# 
+
+
+######################################Installing with package and modifying some values ##########################0
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm install myapp2 myapp1-0.1.0.tgz --set service.nodePort=31232  
+NAME: myapp2
+LAST DEPLOYED: Wed Jan 15 15:25:19 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp2-myapp1)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm list
+NAME  	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART       	APP VERSION
+myapp1	default  	1       	2025-01-15 15:21:18.520632555 +0530 IST	deployed	myapp1-0.1.0	1.16.0     
+myapp2	default  	1       	2025-01-15 15:25:19.1119405 +0530 IST  	deployed	myapp1-0.1.0	1.16.0     
+nginx 	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm status myapp2 --show-resources
+NAME: myapp2
+LAST DEPLOYED: Wed Jan 15 15:25:19 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Service
+NAME            TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+myapp2-myapp1   NodePort   10.96.139.225   <none>        80:31232/TCP   73s
+
+==> v1/Deployment
+NAME            READY   UP-TO-DATE   AVAILABLE   AGE
+myapp2-myapp1   0/1     1            0           72s
+
+==> v1/Pod(related)
+NAME                             READY   STATUS             RESTARTS   AGE
+myapp2-myapp1-78944569f8-7995j   0/1     ImagePullBackOff   0          72s
+
+==> v1/ServiceAccount
+NAME            SECRETS   AGE
+myapp2-myapp1   0         73s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp2-myapp1)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# 
+
+###################################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm package myapp1 --app-version=1.0.0 --version=1.0.0
+Successfully packaged chart and saved it to: /home/kunal/Helm-Study/myapp1-1.0.0.tgz
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# ls -ltr
+total 16
+drwxr-xr-x 4 root root 4096 Jan 15 13:58 myapp
+drwxr-xr-x 4 root root 4096 Jan 15 15:20 myapp1
+-rw-r--r-- 1 root root 3793 Jan 15 15:22 myapp1-0.1.0.tgz
+-rw-r--r-- 1 root root 3785 Jan 15 15:28 myapp1-1.0.0.tgz
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# 
+
+###################################show comand ###############################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm show chart myapp1-0.1.0.tgz
+apiVersion: v2
+appVersion: 1.16.0
+description: A Helm chart for Kubernetes
+name: myapp1
+type: application
+version: 0.1.0
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# helm show chart myapp1-1.0.0.tgz 
+apiVersion: v2
+appVersion: 1.0.0
+description: A Helm chart for Kubernetes
+name: myapp1
+type: application
+version: 1.0.0
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study# 
+
