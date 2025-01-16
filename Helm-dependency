@@ -432,4 +432,348 @@ mychart2	0.4.0  	https://stacksimplify.github.io/helm-charts/	ok
 
 root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
 
+#################################Helm Dependency conditions################################
+Defining condition with dependencies
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: Learn Helm Dependency Concepts
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart4
+  condition: mychart4.enabled                                                              ##############################
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart2
+  condition: mychart2.enabled                                                            #################################By default all condition are true
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+######################################Installed all subcharts as condition is enabled by default ############################
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp1 --show-resources
+NAME: myapp1
+LAST DEPLOYED: Thu Jan 16 10:32:20 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/ServiceAccount
+NAME                 SECRETS   AGE
+myapp1-parentchart   0         38s
+
+==> v1/Service
+NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+myapp1-childchart2   NodePort   10.96.253.19   <none>        80:31232/TCP   38s
+myapp1-childchart4   NodePort   10.96.246.249   <none>   80:30446/TCP   38s
+myapp1-parentchart   NodePort   10.96.63.139   <none>   80:31238/TCP   38s
+
+==> v1/Deployment
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-childchart2   1/1     1            1           38s
+myapp1-childchart4   1/1   1     1     38s
+myapp1-parentchart   1/1   1     1     38s
+
+==> v1/Pod(related)
+NAME                                  READY   STATUS    RESTARTS   AGE
+myapp1-childchart2-545f5d78c5-b9gnj   1/1     Running   0          37s
+myapp1-childchart4-6ddf9c45d-9lcvb   1/1   Running   0     37s
+myapp1-parentchart-6fccf555dc-ktxwj   1/1   Running   0     37s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp1-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# !tail
+tail values.yaml 
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+# Values for Child Charts with Chart Name
+mychart4:
+  enabled: false                                                                ####################################Setting values to false
+mychart2:
+  enabled: false                                                                #############################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+
+
+################################with false condition , subcharts are not install where it is false #########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp1 . --atomic
+NAME: myapp1
+LAST DEPLOYED: Thu Jan 16 10:37:38 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp1-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp1 --show-resources
+NAME: myapp1
+LAST DEPLOYED: Thu Jan 16 10:37:38 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Deployment
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-parentchart   1/1     1            1           22s
+
+==> v1/Pod(related)
+NAME                                  READY   STATUS    RESTARTS   AGE
+myapp1-parentchart-6fccf555dc-cp56s   1/1     Running   0          22s                                            ###################Only Parent is installed
+
+==> v1/ServiceAccount
+NAME                 SECRETS   AGE
+myapp1-parentchart   0         23s
+
+==> v1/Service
+NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+myapp1-parentchart   NodePort   10.96.255.95   <none>        80:31420/TCP   23s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp1-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+
+################################Using alias in condition #############################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: Learn Helm Dependency Concepts
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart4dev
+  condition: childchart4dev.enabled                                                            ###########Condition with aliases
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart4qa
+  condition: childchart4qa.enabled                                                      ####################################
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart2
+  condition: childchart2.enabled
+
+
+Defining values in the values.yaml
+
+############################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# !tail
+tail values.yaml 
+tolerations: []
+
+affinity: {}
+# Values for Child Charts with Alias Name of Chart
+childchart4dev:
+  enabled: false                                                                   ##############################
+childchart4qa:
+  enabled: true                                                                    #################################   
+childchart2:
+  enabled: false                                                                   #############################  
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp . --atomic
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 10:44:29 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 10:44:29 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/ServiceAccount
+NAME                SECRETS   AGE
+myapp-parentchart   0         64s
+
+==> v1/Service
+NAME                  TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+myapp-childchart4qa   NodePort   10.96.255.230   <none>        80:30304/TCP   64s                                    ##########Only 4qa installed with parent
+myapp-parentchart   NodePort   10.96.197.194   <none>   80:31960/TCP   64s
+
+==> v1/Deployment
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-childchart4qa   1/1     1            1           63s
+myapp-parentchart   1/1   1     1     63s
+
+==> v1/Pod(related)
+NAME                                  READY   STATUS    RESTARTS   AGE
+myapp-childchart4qa-b754f8875-sq8ld   1/1     Running   0          61s
+myapp-parentchart-7df4c7c7c6-h7b5q   1/1   Running   0     61s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+########################### We can use tags instead of conditions in the dependencies ##################################
+
+subcharts that need to be divided in to groups then we need to use tags instead of condition
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: Learn Helm Dependency Concepts
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart4dev
+  #condition: childchart4dev.enabled
+  tags:                                                                                     ###################Defining tags
+    - frontend 
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart4qa1
+  #condition: childchart4qa.enabled
+  tags: 
+    - frontend   
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart4qa2
+  #condition: childchart4qa2.enabled
+  tags: 
+    - frontend        
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  alias: childchart2
+  #condition: childchart2.enabled
+  tags: 
+    - backend
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# !tail
+tail values.yaml 
+childchart4dev:
+  enabled: false 
+childchart4qa:
+  enabled: true   
+childchart2:
+  enabled: false 
+
+tags:                                                                  ##################Tags
+ frontend: false  
+ backend: false
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 10:50:44 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Deployment
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-parentchart   1/1     1            1           29s
+
+==> v1/Pod(related)
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp-parentchart-7df4c7c7c6-xndtv   1/1     Running   0          28s        #######Only Parent installed as tags has false value
+
+==> v1/ServiceAccount
+NAME                SECRETS   AGE
+myapp-parentchart   0         29s
+
+==> v1/Service
+NAME                TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+myapp-parentchart   NodePort   10.96.251.254   <none>        80:31633/TCP   29s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+#######################################Setting Backend tag to true ########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm upgrade myapp . --set tags.backend=true --atomic        #############
+Release "myapp" has been upgraded. Happy Helming!
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 10:52:31 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 10:52:31 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+RESOURCES:
+==> v1/Pod(related)
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp-childchart2-7b5c88b8c8-bvzv6   1/1     Running   0          23s                                        ##########Installed as backend tag is set to true
+myapp-parentchart-7df4c7c7c6-xndtv   1/1   Running   0     2m9s
+
+==> v1/ServiceAccount
+NAME                SECRETS   AGE
+myapp-parentchart   0         2m10s
+
+==> v1/Service
+NAME                TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+myapp-childchart2   NodePort   10.96.244.125   <none>        80:31232/TCP   23s
+myapp-parentchart   NodePort   10.96.251.254   <none>   80:31633/TCP   2m10s
+
+==> v1/Deployment
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-childchart2   1/1     1            1           23s
+myapp-parentchart   1/1   1     1     2m10s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
 
