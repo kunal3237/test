@@ -1,0 +1,532 @@
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: Learn Helm Dependency Concepts
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart4
+  version: "0.1.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  condition: mychart4.enabled
+- name: mychart2
+  version: "0.4.0"
+  repository: "https://stacksimplify.github.io/helm-charts/"
+  condition: mychart2.enabled
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# !head
+head values.yaml 
+# Default values for parentchart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1                                                                            #####Parent Value
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm show values charts/mychart2-0.4.0.tgz 
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+image:
+  repository: ghcr.io/stacksimplify/kubenginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 31232
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm show values charts/mychart2-0.4.0.tgz 
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1                                                                                      #################subchart Values
+image:
+  repository: ghcr.io/stacksimplify/kubenginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 31232
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm show values charts/mychart4-0.1.0.tgz 
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1                                                                                    ###############subcharts Values
+image:
+  repository: ghcr.io/stacksimplify/kubenginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+
+service:
+  type: NodePort
+  port: 80
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+#########################################Changing the Subcharts values in parent values.yaml file ##########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# !tail
+tail values.yaml 
+ frontend: false
+ backend: false
+
+# Values for Child Charts with Chart Name
+mychart4:
+  enabled: true
+  replicaCount: 3
+mychart2:
+  enabled: true  
+  replicaCount: 3
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+#######################################################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp --atomic
+Error: INSTALLATION FAILED: must either provide a name or specify --generate-name
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp . --atomic
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 15:57:52 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 15:57:52 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Deployment
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-mychart2   3/3     3            3           37s
+myapp-mychart4   3/3   3     3     37s
+myapp-parentchart   1/1   1     1     37s
+
+==> v1/Pod(related)
+NAME                            READY   STATUS    RESTARTS   AGE
+myapp-mychart2-d9c944d4-62hl8   1/1     Running   0          35s
+myapp-mychart2-d9c944d4-8zm52   1/1     Running   0          35s
+myapp-mychart2-d9c944d4-g7sft   1/1     Running   0          36s                                                    ####################Subcharts taken values from parent value.yaml file
+myapp-mychart4-5dd984dd77-8bdfp   1/1   Running   0     36s
+myapp-mychart4-5dd984dd77-bjs92   1/1   Running   0     36s
+myapp-mychart4-5dd984dd77-z6fq7   1/1   Running   0     35s
+myapp-parentchart-7df4c7c7c6-mzqv2   1/1   Running   0     36s
+
+==> v1/ServiceAccount
+NAME                SECRETS   AGE
+myapp-parentchart   0         38s
+
+==> v1/Service
+NAME             TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+myapp-mychart2   NodePort   10.96.52.106   <none>        80:31232/TCP   38s
+myapp-mychart4   NodePort   10.96.249.226   <none>   80:30917/TCP   38s
+myapp-parentchart   NodePort   10.96.111.144   <none>   80:31810/TCP   38s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+################################################################################################
+Pulling and untaring the helm charts
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts# helm pull helm pull https://stacksimplify.github.io/helm-charts/mychart4-0.1.0.tgz --untar
+Error: non-absolute URLs should be in form of repo_name/path_to_chart, got: helm
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts# helm pull https://stacksimplify.github.io/helm-charts/mychart4-0.1.0.tgz --untar
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts# helm pull https://stacksimplify.github.io/helm-charts/mychart2-0.4.0.tgz --untar
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts# ls -ltr
+total 16
+drwxr-xr-x 2 root root 4096 Jan 16 16:01 mychart4-0.1.0.tgz
+drwxr-xr-x 3 root root 4096 Jan 16 16:01 mychart4
+drwxr-xr-x 2 root root 4096 Jan 16 16:02 mychart2-0.4.0.tgz
+drwxr-xr-x 3 root root 4096 Jan 16 16:02 mychart2
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "stacksimplify" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+Saving 2 charts
+Deleting outdated charts
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm dep list
+NAME    	VERSION	REPOSITORY            	STATUS
+mychart4	0.1.0  	file://charts/mychart4	ok    
+mychart2	0.4.0  	file://charts/mychart2	ok    
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# ls -ltr charts/
+total 16
+drwxr-xr-x 3 root root 4096 Jan 16 16:01 mychart4
+drwxr-xr-x 3 root root 4096 Jan 16 16:02 mychart2
+-rw-r--r-- 1 root root 2644 Jan 16 16:04 mychart4-0.1.0.tgz
+-rw-r--r-- 1 root root 3023 Jan 16 16:04 mychart2-0.4.0.tgz
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+#####################################Global Values in parent values.yaml#############################
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# !tail
+tail values.yaml 
+# Values for Child Charts with Chart Name
+mychart4:
+  enabled: true
+  replicaCount: 3
+mychart2:
+  enabled: true  
+  replicaCount: 3
+# Define Global Values
+global:                                                                                  #########################Global value
+  replicaCount: 4
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts/mychart4# head  templates/deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mychart4.fullname" . }}
+  labels:
+    {{- include "mychart4.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.global.replicaCount }}                                                ####updating the value in mychart4 deployment file
+  selector:
+    matchLabels:
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts/mychart4# 
+
+
+oot@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp . --atomic
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 16:12:32 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp .
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 16:20:34 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm sttus myapp --show-resources
+
+###################################################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 16:20:34 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Service
+NAME                TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+myapp-childchart2   NodePort   10.96.71.197   <none>        80:31232/TCP   30s
+myapp-childchart4   NodePort   10.96.37.249   <none>   80:32757/TCP   30s
+myapp-parentchart   NodePort   10.96.120.254   <none>   80:31819/TCP   30s
+
+==> v1/Deployment
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-childchart2   1/1     1            1           30s
+myapp-childchart4   4/4   4     4     30s
+myapp-parentchart   1/1   1     1     30s
+
+==> v1/Pod(related)
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp-childchart2-7b5c88b8c8-lx2q6   1/1     Running   0          30s
+myapp-childchart4-78cfc58dc5-m6bfp   1/1   Running   0     30s
+myapp-childchart4-78cfc58dc5-nrbcl   1/1   Running   0     30s                                                      ###############Chart4 took replicaount 4 whereas others took 1 only
+myapp-childchart4-78cfc58dc5-xw42d   1/1   Running   0     30s
+myapp-childchart4-78cfc58dc5-zmdrb   1/1   Running   0     29s
+myapp-parentchart-7df4c7c7c6-ndjws   1/1   Running   0     30s
+
+==> v1/ServiceAccount
+NAME                SECRETS   AGE
+myapp-parentchart   0         30s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+########################################Importing the values from one of the chart to parent chart files###########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts/mychart2# tail values.yaml 
+  type: NodePort
+  port: 80
+  nodePort: 31232
+# Export Values - MyChart1 (Used for Import Values Explicit Usecase)
+exports:                                                                                                                ######Exporting from chart2
+  mychart1Data:
+    mychart1appInfo:
+      appName: kapp1
+      appType: MicroService
+      appDescription: Used for listing products    
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart/charts/mychart2# 
+
+#####################################Importing the valaues in partent chart #################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: Learn Helm Dependency Concepts
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart2
+  version: "0.4.0"
+  repository: "file://charts/mychart2"
+  alias: childchart2
+  tags: 
+    - backend
+- name: mychart4
+  version: "0.1.0"
+  repository: "file://charts/mychart4"
+  alias: childchart4
+  tags: 
+    - frontend
+  import-values:                                                                    ###########################Importing the value from subchart########
+    - mychart1Data # Explicit Values Import Usecase
+
+##############################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm template myapp . | grep -iA 10 config.yaml
+# Source: parentchart/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  myapp-parentchart-import-explicit
+data:                                                                                  #################values is used in parent chart
+  appDescription: Used for listing products
+  appName: kapp1
+  appType: MicroService
+---
+
+#################################Implicit values import ##################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat Chart.yaml 
+apiVersion: v2
+name: parentchart
+description: Learn Helm Dependency Concepts
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mychart4
+  version: "0.1.0"
+  repository: "file://charts/mychart4"
+  alias: childchart4
+  tags: 
+    - frontend
+
+- name: mychart2
+  version: "0.4.0"
+  repository: "file://charts/mychart2"
+  alias: childchart2
+  tags: 
+    - backend
+  import-values: # Implicit Values Usecase
+    - child: service 
+      parent: mychart2service                                                                           #################Setting name to mychart2service for child
+    - child: image 
+      parent: mychart2image      
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# cat templates/config.yaml 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  {{ include "parentchart.fullname" . }}-import-implicit
+data:
+  serviceType: {{ .Values.mychart2service.type }}                                                              ######Values form import
+  servicePort: {{ .Values.mychart2service.port | quote}}
+  servicenodePort: {{ .Values.mychart2service.nodePort | quote }}
+  imageRepository: {{ .Values.mychart2image.repository }}
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm show values charts/mychart2/
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+image:
+  repository: ghcr.io/stacksimplify/kubenginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 31242                                                                                      ####Chart2 service values
+# Export Values - MyChart1 (Used for Import Values Explicit Usecase)
+exports:
+  mychart1Data:
+    mychart1appInfo:
+      appName: kapp1
+      appType: MicroService
+      appDescription: Used for listing products    
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+
+################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm show values . | grep -wiA5 service
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+--
+service:
+  type: NodePort
+  port: 80
+  nodePort: 31240                                                                                #####Parent nodeport
+  
+ingress:
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm install myapp .
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 18:29:53 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART            	APP VERSION
+myapp	default  	1       	2025-01-16 18:29:53.249738054 +0530 IST	deployed	parentchart-0.1.0	1.16.0     
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1     	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# helm status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Thu Jan 16 18:29:53 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/ServiceAccount
+NAME                SECRETS   AGE
+myapp-parentchart   0         17s
+
+==> v1/ConfigMap
+NAME                                DATA   AGE
+myapp-parentchart-import-implicit   4      17s
+
+==> v1/Service
+NAME                TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+myapp-childchart2   NodePort   10.96.18.72   <none>        80:31242/TCP   17s                                                                      ############parent took 31242 as the nodeport valuse, imported from subchart
+myapp-childchart4   NodePort   10.96.80.0   <none>   80:32091/TCP   17s
+myapp-parentchart   NodePort   10.96.145.13   <none>   80:32266/TCP   17s
+
+==> v1/Deployment
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-childchart2   1/1     1            1           16s
+myapp-childchart4   4/4   4     4     16s
+myapp-parentchart   1/1   1     1     16s
+
+==> v1/Pod(related)
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp-childchart2-7b5c88b8c8-sxk6v   1/1     Running   0          16s
+myapp-childchart4-78cfc58dc5-n2mz9   1/1   Running   0     16s
+myapp-childchart4-78cfc58dc5-ql986   1/1   Running   0     16s
+myapp-childchart4-78cfc58dc5-rt824   1/1   Running   0     16s
+myapp-childchart4-78cfc58dc5-sdk6s   1/1   Running   0     16s
+myapp-parentchart-7df4c7c7c6-66qrf   1/1   Running   0     16s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-parentchart)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# 
+
+##################################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/parentchart# kubectl describe configmap myapp-parentchart-import-implicit
+Name:         myapp-parentchart-import-implicit
+Namespace:    default
+Labels:       app.kubernetes.io/managed-by=Helm
+Annotations:  meta.helm.sh/release-name: myapp
+              meta.helm.sh/release-namespace: default
+
+Data
+====
+imageRepository:
+----
+ghcr.io/stacksimplify/kubenginx                                              ###################################################
+
+servicePort:
+----
+80
+
+serviceType:
+----
+NodePort
+
+servicenodePort:
+----
+31242                                                                          ###################################
+
+
+BinaryData
+====
+
+Events:  <none>
