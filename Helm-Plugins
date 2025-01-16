@@ -1,0 +1,10 @@
+Helm-Plugins
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/mystarterchrt/myapp# helm plugin list
+NAME	VERSION	DESCRIPTION
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/mystarterchrt/myapp# helm plugin install https://github.com/salesforce/helm-starter.git
+Installed plugin: starter
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/mystarterchrt/myapp# helm plugin list
+NAME   	VERSION	DESCRIPTION                                                       
+starter	1.0.0  	This plugin fetches, lists, and deletes helm starters from github.
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/mystarterchrt/myapp# 
