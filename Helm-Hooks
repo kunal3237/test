@@ -225,3 +225,320 @@ nginx-fc995b8c8-8q7dd   1/1     Running     24 (24h ago)   33d
 root@kunal-Lenovo-U410:/home/kunal# 
 
 Uinstalling the helm chart does not remove the hooks, to remove the pods either remove the pods manually or confgure the Hook deletion policy
+
+##########################################################################
+root@kunal-Lenovo-U410:/home/kunal# kubectl get pods
+NAME                    READY   STATUS      RESTARTS       AGE
+myhook-postdelete       0/1     Completed   0              15h
+myhook-preinstall       0/1     Completed   0              15h                                    ####Pods completed and exist in the list
+myhook-preupgrade       0/1     Completed   0              15h
+nginx-fc995b8c8-8q7dd   1/1     Running     25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3           #Only one helm chart exists
+root@kunal-Lenovo-U410:/home/kunal# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm install myapp . --atomic
+NAME: myapp
+LAST DEPLOYED: Sat Jan 18 10:44:19 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-myhooks)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods
+NAME                             READY   STATUS      RESTARTS       AGE
+myapp-myhooks-654549c595-8hhnf   1/1     Running     0              19s
+myhook-postdelete                0/1     Completed   0              15h
+myhook-preinstall                0/1     Completed   0              42s                            ###Preinstall pod created again and completed 
+myhook-preupgrade                0/1     Completed   0              15h
+nginx-fc995b8c8-8q7dd            1/1     Running     25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+###############################################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods
+NAME                    READY   STATUS      RESTARTS       AGE
+myhook-postdelete       0/1     Completed   0              34s
+myhook-preinstall       0/1     Completed   0              2m59s
+myhook-preupgrade       0/1     Completed   0              15h
+nginx-fc995b8c8-8q7dd   1/1     Running     25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl delete pod myhook-preinstall
+pod "myhook-preinstall" deleted
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl delete pod myhook-preupgrade
+pod "myhook-preupgrade" deleted
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl delete pod myhook-postdelete
+pod "myhook-postdelete" deleted
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods
+NAME                    READY   STATUS    RESTARTS       AGE
+nginx-fc995b8c8-8q7dd   1/1     Running   25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+##############################Setting up the deletion policy ###########################
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks/templates# cat preinstall-hookpod.yaml 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: myhook-preinstall
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded                                      #######Deletion policy
+spec:
+  restartPolicy: Never
+  containers:
+    - name: myhook-preinstall-container
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command:  ['sh', '-c', 'echo Pre-install hook Pod is running && sleep 15']      
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks/templates# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm install myapp . --atomic
+NAME: myapp
+LAST DEPLOYED: Sat Jan 18 10:52:06 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-myhooks)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART        	APP VERSION
+myapp	default  	1       	2025-01-18 10:52:06.993501722 +0530 IST	deployed	myhooks-0.1.0	0.1.0      
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1 	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods                                          #####No hook pod exist because of deletion policy
+NAME                             READY   STATUS    RESTARTS       AGE
+myapp-myhooks-654549c595-6crzd   1/1     Running   0              32s
+nginx-fc995b8c8-8q7dd            1/1     Running   25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm upgrade myapp . --set image.tag=0.2.0
+Release "myapp" has been upgraded. Happy Helming!
+NAME: myapp
+LAST DEPLOYED: Sat Jan 18 10:54:31 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-myhooks)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods                            ######No Preupgrade pod exists, Becuase os deletion policy
+NAME                            READY   STATUS    RESTARTS       AGE
+myapp-myhooks-76f97bd74-c9mvw   1/1     Running   0              10s
+nginx-fc995b8c8-8q7dd           1/1     Running   25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm uninstall myapp
+release "myapp" uninstalled
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods                                  ####No post delete pod exist
+NAME                    READY   STATUS    RESTARTS       AGE
+nginx-fc995b8c8-8q7dd   1/1     Running   25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+
+#########################################Hook Weigts ###################################
+Weight of the hooks works in ascending order.
+
+
+Created three hooks with different weights:
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks/templates# cat preinstall-hookpod1.yaml 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: myhook-preinstall
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "-2"                                                        ########Hook-Weight defined
+spec:
+  restartPolicy: Never
+  containers:
+    - name: myhook-preinstall-container
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command:  ['sh', '-c', 'echo Pre-install hook Pod is running && sleep 15']      
+
+
+#############################################################
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm install myapp . --atomic
+NAME: myapp
+LAST DEPLOYED: Sat Jan 18 11:07:54 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-myhooks)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+#############################################################
+Pods getting created in helm weight
+
+root@kunal-Lenovo-U410:/home/kunal# kubectl get pods -w
+NAME                    READY   STATUS    RESTARTS       AGE
+nginx-fc995b8c8-8q7dd   1/1     Running   25 (13h ago)   33d
+myhook-preinstall1      0/1     Pending   0              0s
+myhook-preinstall1      0/1     Pending   0              1s
+myhook-preinstall1      0/1     ContainerCreating   0              1s
+myhook-preinstall1      1/1     Running             0              3s
+myhook-preinstall1      0/1     Completed           0              19s
+myhook-preinstall1      0/1     Completed           0              21s
+myhook-preinstall2      0/1     Pending             0              0s
+myhook-preinstall2      0/1     Pending             0              0s
+myhook-preinstall2      0/1     ContainerCreating   0              0s
+myhook-preinstall1      0/1     Completed           0              22s
+myhook-preinstall2      1/1     Running             0              2s
+
+
+root@kunal-Lenovo-U410:/home/kunal# kubectl get pods 
+NAME                             READY   STATUS    RESTARTS       AGE
+myapp-myhooks-654549c595-6c42k   1/1     Running   0              36s
+nginx-fc995b8c8-8q7dd            1/1     Running   25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal# 
+
+
+########################################Helm test ################################
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks/templates# cat mytest.yaml 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: myhook-test
+  annotations:
+    "helm.sh/hook": "test"                                                #####Defined test pod
+spec:
+  restartPolicy: Never
+  containers:
+    - name: myhook-preinstall-container
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command:  ['sh', '-c', 'echo Pre-install hook Pod is running && sleep 15']      
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks/templates# 
+
+
+###############################Chart should be install and running to use test 
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART        	APP VERSION
+myapp	default  	1       	2025-01-18 11:22:57.643281771 +0530 IST	deployed	myhooks-0.1.0	0.1.0      
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST 	deployed	nginx-15.4.1 	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods
+NAME                             READY   STATUS    RESTARTS       AGE
+myapp-myhooks-654549c595-bc2hf   1/1     Running   0              92s
+nginx-fc995b8c8-8q7dd            1/1     Running   25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm test myapp
+NAME: myapp
+LAST DEPLOYED: Sat Jan 18 11:22:57 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE:     myhook-test
+Last Started:   Sat Jan 18 11:25:45 2025
+Last Completed: Sat Jan 18 11:26:07 2025
+Phase:          Succeeded                                                #####Worked well
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-myhooks)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get pods
+NAME                             READY   STATUS      RESTARTS       AGE
+myapp-myhooks-654549c595-bc2hf   1/1     Running     0              3m17s
+myhook-test                      0/1     Completed   0              97s                                                    ####Completed
+nginx-fc995b8c8-8q7dd            1/1     Running     25 (13h ago)   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+
+##############################################To keep the resources even helm chart is uninstalled Using resource-Policy#########################
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# cat templates/service.yaml 
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "myapp1.fullname" . }}
+  labels:
+    {{- include "myapp1.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/resource-policy": keep                                                    ####3Defining resource-Policy
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      nodePort: {{ .Values.service.nodePort }}
+  selector:
+    {{- include "myapp1.selectorLabels" . | nindent 4 }}
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm  status myapp --show-resources
+NAME: myapp
+LAST DEPLOYED: Sat Jan 18 11:32:17 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Service
+NAME            TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+myapp-myhooks   NodePort   10.96.24.232   <none>        80:31239/TCP   2m28s
+
+==> v1/Deployment
+NAME            READY   UP-TO-DATE   AVAILABLE   AGE
+myapp-myhooks   1/1     1            1           2m28s
+
+==> v1/Pod(related)
+NAME                             READY   STATUS    RESTARTS   AGE
+myapp-myhooks-654549c595-r6gjm   1/1     Running   0          2m28s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services myapp-myhooks)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm uninstall myapp
+These resources were kept due to the resource policy:                                                        ######Reporting tht service will be kept after chart uninstalled 
+[Service] myapp-myhooks
+
+release "myapp" uninstalled
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# helm list
+NAME 	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART       	APP VERSION
+nginx	default  	6       	2024-12-15 18:11:49.53997725 +0530 IST	deployed	nginx-15.4.1	1.25.3     
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
+
+
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# kubectl get svc
+NAME            TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes      ClusterIP      10.96.0.1       <none>        443/TCP        33d
+myapp-myhooks   NodePort       10.96.24.232    <none>        80:31239/TCP   3m37s                                #######Service exist even after Chart uninstalled
+nginx           LoadBalancer   10.96.188.131   <pending>     80:31667/TCP   33d
+root@kunal-Lenovo-U410:/home/kunal/Helm-Study/myhooks# 
